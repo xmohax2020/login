@@ -1,59 +1,117 @@
-# دليل إرشادات كامل لاستخدام وتطوير rb-uploader-assistant
+# الدليل الكامل (من الصفر إلى التشغيل)
 
-## A) الهدف من التطبيق
-هذا التطبيق يبني مسار عمل فعلي لتجهيز التصاميم قبل الرفع اليدوي على Redbubble:
-- توحيد المقاسات.
-- تخفيض الأخطاء البشرية.
-- تسريع الإنتاج اليومي.
+هذا الملف مكتوب ليشرح لك التطبيق كأنك تشغله أول مرة.
 
-## B) تشغيل لأول مرة
-1. تثبيت المتطلبات وتشغيل DB.
-2. إدخال ملفات في input_designs.
-3. تشغيل prepare ثم validate.
-4. فتح dashboard والعمل على الحالات.
+## 1) فهم الفكرة بسرعة
 
-## C) سياسة العمل الآمن
-- عدم تجاوز CAPTCHA أو أنظمة حماية.
-- عدم عمل Auto-publish 100%.
-- مراجعة بشرية إلزامية قبل النشر النهائي.
+### الأداة تعمل على 3 مراحل:
+1. **Prepare**: تجهيز ملفات التصميم (مقاسات متعددة).
+2. **Metadata**: توليد بيانات أولية (عنوان/وصف/وسوم).
+3. **Assist**: مراجعة/تعديل/تتبع حالة قبل الرفع اليدوي.
 
-## D) شرح المكونات
-- `scripts/prepare.py`: يحوّل الصور ويولّد metadata.
-- `scripts/validate.py`: فحص شروط الجودة.
-- `app/main.py`: واجهات API ولوحة الويب.
-- `app/db/sqlite.py`: قاعدة البيانات + audit logs.
+### الأداة لا تقوم بـ:
+- توليد صور جديدة من الصفر.
+- نشر تلقائي على Redbubble.
 
-## E) أفضل إعداد تشغيل يومي
+---
+
+## 2) الشرح العملي (واحد واحد)
+
+### 2.1 تثبيت
 ```bash
-python scripts/prepare.py --niche general --skip-duplicates
-python scripts/validate.py --metadata data/designs.csv
-uvicorn app.main:app --port 8080
+git clone <YOUR_REPO_URL>
+cd rb-uploader-assistant
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 ```
 
-## F) خطوات فريق التصميم
-1. المصمم يضع ملفاته.
-2. مسؤول التشغيل يشغل prepare/validate.
-3. مسؤول الجودة يراجع dashboard.
-4. مسؤول النشر يرفع يدويًا ويحدّث status.
+### 2.2 تجهيز البيئة
+```bash
+python scripts/sync_db.py
+mkdir -p input_designs exports data
+```
 
-## G) Checklists
-### قبل الرفع
-- [ ] العنوان واضح.
-- [ ] الوسوم غير مكررة.
-- [ ] المقاسات موجودة في exports.
-- [ ] الحالة = ready.
+### 2.3 ضع ملفاتك
+ضع الصور داخل `input_designs/`.
 
-### بعد الرفع
-- [ ] تغيير الحالة إلى uploaded/published.
-- [ ] حفظ أي ملاحظات في سجل داخلي الفريق.
+### 2.4 شغل التحضير
+```bash
+python scripts/prepare.py --niche general --skip-duplicates
+```
 
-## H) استكشاف الأخطاء
-- خطأ import app: شغل السكربتات من داخل جذر المشروع.
-- فشل validate: صحح title/tags/description.
-- لا تظهر بيانات في UI: تأكد أن prepare اشتغل بنجاح.
+### 2.5 تحقق من النتائج
+```bash
+python scripts/validate.py --metadata data/designs.csv
+```
 
-## I) خطة التوسعة
-- إضافة auth بسيط.
-- إضافة export JSON بجانب CSV.
-- إضافة batch controls في UI.
-- إضافة unit/integration tests أكثر.
+### 2.6 افتح الواجهة
+```bash
+uvicorn app.main:app --reload --port 8080
+```
+وافتح: `http://127.0.0.1:8080/`
+
+---
+
+## 3) كيف تستخدمه يومياً؟
+1. أضف تصاميم جديدة.
+2. شغل `prepare.py`.
+3. شغل `validate.py`.
+4. راجع من Dashboard.
+5. غيّر الحالة إلى `ready`.
+6. ارفع يدوياً على Redbubble.
+7. بعد الرفع غيّر الحالة `uploaded` ثم `published`.
+
+---
+
+## 4) فهم الملفات الناتجة
+- `exports/<slug>/...png`: المقاسات النهائية.
+- `data/designs.csv`: البيانات الوصفية.
+- `data/app.db`: قاعدة البيانات.
+
+---
+
+## 5) شرح بسيط للـ API
+- `/health`: يتأكد أن السيرفر شغال.
+- `/designs`: يعرض كل التصاميم.
+- `/designs?status=ready`: فلترة حسب الحالة.
+- `/designs/{id}/status`: تغيير الحالة.
+- `/designs/{id}/metadata`: تعديل metadata.
+- `/audit-logs`: سجل العمليات.
+
+---
+
+## 6) هل تنشر الأداة تلقائياً؟
+**لا**.
+- الأداة تجهز فقط.
+- أنت ترفع على Redbubble بنفسك.
+
+---
+
+## 7) أفضل طريقة للعمل مع فريق
+- المصمم: يضع الملفات.
+- المشغل: يشغل prepare/validate.
+- المراجع: يراجع metadata في Dashboard.
+- الناشر: يرفع يدوياً ويحدث الحالة.
+
+---
+
+## 8) Troubleshooting سريع
+
+### validate فشل
+- غالباً title قصير/طويل أو tags قليلة.
+- عدل metadata ثم أعد validate.
+
+### ما فيه بيانات في Dashboard
+- تأكد أنك شغلت `prepare.py`.
+
+### مشكلة مكتبات ناقصة
+- أعد تفعيل `.venv` ثم `pip install -r requirements.txt`.
+
+---
+
+## 9) ماذا أطور لاحقاً؟
+- تحسين قوالب metadata حسب niche.
+- دعم SVG متقدم.
+- إضافة auth للمستخدمين.
+- بناء صفحة تقارير KPI.

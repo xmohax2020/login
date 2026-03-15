@@ -1,76 +1,102 @@
-# rb-uploader-assistant (Complete MVP Guide)
+# rb-uploader-assistant
 
-`rb-uploader-assistant` أداة **Prep + Assist** لتجهيز ملفات التصميم قبل رفعها على Redbubble:
-- تجهيز المقاسات تلقائيًا.
-- توليد metadata أولية.
-- حفظ الحالة في قاعدة بيانات.
-- لوحة مراجعة وتعديل قبل الرفع اليدوي النهائي.
+أداة داخلية لتسريع تجهيز ملفات التصميم قبل الرفع اليدوي على Redbubble.
 
-> ملاحظة مهمة: الأداة لا تنفذ نشر تلقائي نهائي داخل Redbubble (التأكيد النهائي يدوي).
+## ✅ ماذا تفعل الأداة؟
+- تأخذ صورك من `input_designs/`.
+- تنشئ نسخ مقاسات متعددة في `exports/<slug>/`.
+- تولّد metadata أولية (title/description/tags).
+- تحفظ النتائج في قاعدة SQLite + ملف CSV.
+- تعطيك Dashboard لمراجعة وتعديل وتغيير الحالة.
+
+## ❌ ماذا لا تفعل الأداة؟
+- لا تولّد صور جديدة من الصفر (ليست مولد صور AI).
+- لا تنشر تلقائياً على Redbubble.
+- لا تتجاوز CAPTCHA أو أي حماية.
+
+> الخلاصة: الأداة **Prep + Assist** وليست Auto-Publisher.
+
+---
 
 ## 1) المتطلبات
-- Python 3.10+
+- Python 3.10 أو أعلى
 - pip
+- نظام Linux/macOS أو WSL على Windows
 
-## 2) التشغيل السريع
+---
+
+## 2) التشغيل خطوة بخطوة (نسخة GitHub)
+
+### الخطوة 1: تنزيل المشروع
 ```bash
+git clone <YOUR_REPO_URL>
 cd rb-uploader-assistant
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-
-python scripts/sync_db.py
-python scripts/prepare.py --input input_designs --output exports --metadata data/designs.csv --niche general --skip-duplicates
-python scripts/validate.py --metadata data/designs.csv
-uvicorn app.main:app --reload --port 8080
 ```
 
-افتح:
-- Dashboard: `http://127.0.0.1:8080/`
-- Health: `http://127.0.0.1:8080/health`
+### الخطوة 2: إنشاء بيئة بايثون
+```bash
+python -m venv .venv
+source .venv/bin/activate
+```
 
-## 3) هيكل المشروع
+### الخطوة 3: تثبيت المتطلبات
+```bash
+pip install -r requirements.txt
+```
+
+### الخطوة 4: تهيئة قاعدة البيانات
+```bash
+python scripts/sync_db.py
+```
+
+### الخطوة 5: ضع التصاميم داخل المجلد
+ضع ملفاتك (PNG/JPG/JPEG/WEBP) داخل:
 ```text
-app/main.py                  # API + static web
-app/db/sqlite.py             # DB schema + CRUD + audit logs
-app/services/image_pipeline.py
-app/services/metadata_pipeline.py
-app/services/dedupe.py
-app/web/index.html
-app/web/app.js
-scripts/prepare.py
-scripts/validate.py
-scripts/sync_db.py
-configs/sizes.yaml
-data/
-exports/
 input_designs/
 ```
 
-## 4) دورة العمل اليومية
-1. ضع التصاميم في `input_designs/`.
-2. نفذ `prepare.py` لإنشاء `exports/<slug>/` و`data/designs.csv`.
-3. نفذ `validate.py`.
-4. افتح Dashboard وراجع/عدّل metadata.
-5. حدث الحالة: `ready` ثم `uploaded` ثم `published`.
-
-## 5) أوامر مفيدة
-### تجهيز
+### الخطوة 6: تجهيز المقاسات + metadata
 ```bash
-python scripts/prepare.py --niche "arabic-quotes" --skip-duplicates
+python scripts/prepare.py --input input_designs --output exports --metadata data/designs.csv --niche general --skip-duplicates
 ```
 
-### التحقق
+### الخطوة 7: فحص metadata
 ```bash
 python scripts/validate.py --metadata data/designs.csv
 ```
 
-### تشغيل API
+### الخطوة 8: تشغيل الواجهة
 ```bash
 uvicorn app.main:app --reload --port 8080
 ```
 
-## 6) API Endpoints
+### الخطوة 9: افتح من المتصفح
+- Dashboard: `http://127.0.0.1:8080/`
+- Health: `http://127.0.0.1:8080/health`
+
+---
+
+## 3) ماذا أفعل بعد فتح الـ Dashboard؟
+1. راجع التصميم والعنوان والوسوم.
+2. عدّل metadata إذا احتجت.
+3. غيّر الحالة:
+   - `draft` → `ready`
+   - بعد الرفع اليدوي: `uploaded`
+   - بعد النشر: `published`
+4. من Redbubble ارفع الملفات **يدوياً**.
+
+---
+
+## 4) الحالات (Status)
+- `draft`: مسودة/تحتاج مراجعة
+- `ready`: جاهز للرفع
+- `uploaded`: تم الرفع
+- `published`: تم النشر
+- `duplicate`: ملف مكرر (نفس SHA256)
+
+---
+
+## 5) API المختصرة
 - `GET /health`
 - `GET /designs?status=ready`
 - `GET /designs/{id}`
@@ -79,26 +105,39 @@ uvicorn app.main:app --reload --port 8080
 - `POST /designs/{id}/regenerate-metadata?niche=general`
 - `GET /audit-logs?limit=50`
 
-## 7) حالات التصميم
-- `draft`
-- `ready`
-- `uploaded`
-- `published`
-- `duplicate`
+---
 
-## 8) التحقق والجودة
-- العنوان: 20-80 حرف
-- الوصف: إلزامي
-- الوسوم: 10-20 وسم بدون تكرار
+## 6) Docker (اختياري)
+```bash
+docker compose up --build
+```
+ثم افتح `http://127.0.0.1:8080/`
 
-## 9) أسئلة شائعة
-### لماذا تصميم معين status = duplicate؟
-عند استخدام `--skip-duplicates` وإذا `sha256` موجود مسبقًا.
+---
 
-### لماذا validate يفشل؟
-افتح `data/designs.csv` وصحح القيم أو عدل عبر Dashboard.
+## 7) مشاكل شائعة وحلولها
 
-## 10) تطوير لاحق مقترح
-- دعم SVG متقدم.
-- تصدير قوالب منتجات أكثر.
-- صلاحيات مستخدمين وسجل تدقيق أوسع.
+### المشكلة: `ModuleNotFoundError`
+الحل: تأكد أنك داخل بيئة `.venv` وشغلت:
+```bash
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+### المشكلة: `Validation failed`
+الحل: راجع `data/designs.csv` أو عدّل من Dashboard (العنوان 20-80، الوسوم 10-20، بدون تكرار).
+
+### المشكلة: لا تظهر تصاميم في الواجهة
+الحل: تأكد أنك وضعت صور في `input_designs/` ثم شغلت `prepare.py`.
+
+---
+
+## 8) هل الأداة مناسبة لك؟
+الأداة مناسبة إذا كنت تريد:
+- تسريع تجهيز ونشر الأعمال يدوياً.
+- تقليل الأخطاء والتكرار.
+- الاحتفاظ بسجل واضح للحالات.
+
+غير مناسبة إذا كنت تريد:
+- توليد صور AI تلقائي.
+- نشر تلقائي 100% بدون تدخل بشري.
