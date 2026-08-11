@@ -1,0 +1,9 @@
+services:
+  rb-uploader:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./input_designs:/app/input_designs
+      - ./exports:/app/exports
+      - ./data:/app/data

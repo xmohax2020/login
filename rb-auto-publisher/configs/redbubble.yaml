@@ -1,0 +1,14 @@
+base_url: "https://www.redbubble.com"
+upload_path: "/portfolio/images/new"
+state_file: "data/state.json"
+headless: false
+slow_mo_ms: 150
+selectors:
+  file_input: "input[type='file']"
+  title_input: "input[name='title']"
+  description_input: "textarea[name='description']"
+  tags_input: "input[name='tag_string']"
+  mature_toggle_safe: "input[value='safe']"
+  public_toggle: "input[name='is_public']"
+  save_button: "button[type='submit']"
+  publish_button: "button[data-testid='publish-work']"

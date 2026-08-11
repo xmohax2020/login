@@ -1,0 +1,10 @@
+sizes:
+  - name: sticker
+    width: 2800
+    height: 2800
+  - name: tshirt
+    width: 4500
+    height: 5400
+  - name: poster
+    width: 5000
+    height: 7000
